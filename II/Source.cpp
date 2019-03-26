@@ -1,64 +1,110 @@
-#include "Tokenizer.h"
+#pragma once
 
-//2)	Подмножество языка С++ включает:
-//•	данные типа int;
-//•	инструкции описания переменных;
-//•	операторы присваивания, while любой вложенности и в любой последовательности;
-//•	операции +, –, <=, >=, <, >.
+#include <string>
+#include <vector>
+#include <iostream>
+#include "DynamicTable.h"
+#include "StaticTable.h"
 
+using namespace std;
 
-int main() {
+// State Table of DFA
+//--------------------------------------------------------------------------------------------------
+//\\\\\\\\| LETTER | NUMERAL | + -  |  =   |  >   |  <   |  /   |   *   |  \n  | OTHER | DELIMITER |
+//--------------------------------------------------------------------------------------------------
+// START  |  NAME  | NUMBER  | ADD  | ADD  |  >   |  <   |  /   |  ERR  |  ADD |  ERR  |    ADD    |
+//--------------------------------------------------------------------------------------------------
+//  NAME  |  NAME  | NUMBER  | PUSH | PUSH | PUSH | PUSH | PUSH |  PUSH | PUSH | PUSH  |   PUSH    |
+//--------------------------------------------------------------------------------------------------
+// NUMBER |  PUSH  | NUMBER  | PUSH | PUSH | PUSH | PUSH | PUSH |  PUSH | PUSH | PUSH  |   PUSH    |
+//--------------------------------------------------------------------------------------------------
+//   >    |  PUSH  |  PUSH   | PUSH | ADD  | PUSH | PUSH | PUSH |  PUSH | PUSH | PUSH  |   PUSH    |
+//--------------------------------------------------------------------------------------------------
+//   <    |  PUSH  |  PUSH   | PUSH | ADD  | PUSH | PUSH | PUSH |  PUSH | PUSH | PUSH  |   PUSH    |
+//--------------------------------------------------------------------------------------------------
+//   /    |   ERR  |   ERR   |  ERR | ERR  | ERR  | ERR  | //.. |  /*.. |  ERR |  ERR  |    ERR    |
+//--------------------------------------------------------------------------------------------------
+//  //..  |  //..  |  //..   | //.. | //.. | //.. | //.. | //.. |  //.. |  IGN | //..  |   //..    |
+//--------------------------------------------------------------------------------------------------
+//  /*..  |  /*..  |  /*..   | /*.. | /*.. | /*.. | /*.. | /*.. | /*..* | /*.. | /*..  |   /*..    |
+//--------------------------------------------------------------------------------------------------
+// /*..*  |  /*..  |  /*..   | /*.. | /*.. | /*.. | /*.. |  IGN | /*..* | /*.. | /*..  |   /*..    |
+//--------------------------------------------------------------------------------------------------
 
-	/*ifstream in("test.txt");
-	string text;
-	string str;
-	while (in >> str) {
+struct Token {
 
-		text += str + " ";
-	};
-	in.close();*/
+	string tableName;
+	int firstPos;
+	int secondPos;
+	string lexem;
+};
 
-	//const string text = "int main() {\nint a = 0;\nint b = -5;\nwhile (a < b) {\n/*\nbe\nli\nber\nda\n*\n*\n*\n*/\na = a + 1;\n}\n\nreturn 0;\n}";
-	//const string text = "/int a=5;int b=23; while/*(a<b)*/{a=a+5};return a;";
-	const string text = "while(a<b)\n{\na=a+5;\n};\nreturn @0+a#;";
-	// const string text = "int a a0;";
-	//const string text = "a - 3";
-	//const string text = "@@@@  шипучка   999abv   __4a";
+enum Symbol
+{
+	LETTER = 0,
+	NUMERAL,
+	ARITHMETIC_OPERATION,
+	EQUAL_SYMBOL,
+	MORE_SYMBOL,
+	LESS_SYMBOL,
+	SLASH_SYMBOL,
+	ASTERISK_SYMBOL,
+	END_OF_LINE,
+	OTHER,
+	DELIMETER,
+};
 
-	ofstream out2("testi.txt");
-	for (auto i : text) {
+enum State
+{
+	START = 0,
 
-		out2 << i;
-	}
-	out2.close();
+	NAME,
+	NUMBER,
+	MORE,
+	LESS,
+	COMMENTARY,
+	SINGLE_LINE_COMMENTARY,
+	MULTIPLE_LINES_COMMENTARY,
+	MULTIPLE_LINES_COMMENTARY_END,
 
-	StaticTable keyWords("key words.txt");
-	StaticTable operations("operations.txt");
-	StaticTable delimiters;
-	delimiters.init({ "{", "}", "(", ")", "\t", "\n", ";", ",", " " });
-	DynamicTable identifiers;
-	DynamicTable constants;
-	
-	ofstream out("tokens.txt");
-	DFA dfa(text);
-	vector <Token> tokens;
-	tokens = dfa.parse(keyWords, delimiters, operations, constants, identifiers);
-	out << "lexem" << "\t" << "|" << "\t" << "table name" << "\t" << "|" << "\t" << "first" << 
-		"\t" << "|" << "\t" << "second" << "\t" << "|" << endl;
-	out << "-----------------------------------------------------------------" << endl;
-	for (int i = 0; i < tokens.size(); ++i) {
-		if (tokens[i].lexem == "\n") {
+	ADD,
+	PUSH,
+	ERROR,
+	SKIP,
+};
 
-			out << "\\n" << "\t" << "|" << "\t" << tokens[i].tableName << "\t" << "|" << "\t"
-				<< tokens[i].firstPos << "\t" << "|" << "\t" << tokens[i].secondPos << "\t" << "|" << endl;
-		} else {
+enum WhichTableToAdd
+{
+	KEYWORDS_OR_IDENTIFIERS,
+	DELIMETERS,
+	OPERATIONS,
+	CONSTANTS,
 
-		out << tokens[i].lexem << "\t" << "|" << "\t" << tokens[i].tableName << "\t" << "|" <<
-			"\t" << tokens[i].firstPos << "\t" << "|" << "\t" << tokens[i].secondPos << "\t" << "|" << endl;
-		}
-	}
+	IGNORE,
+	ERR,
+};
 
-	out << "-----------------------------------------------------------------";
-	out.close();
-	return 0;
-}
+// deterministic finite automaton
+class DFA {
+
+public:
+	DFA(const string &text);
+	bool automating(void);
+	bool isFinalState(void) const;
+	WhichTableToAdd getTableType(void);
+	string getLexem(void) const;
+	int getPos(void) const;
+	State nextState(Symbol symbol, State state);
+	vector <Token> parse(StaticTable &keyWords, StaticTable &delimiters,
+		StaticTable &operations, DynamicTable &constants, DynamicTable &identifiers);
+
+private:
+	Symbol getSymbolType(char symbol);
+	bool initializeStateTable(void);
+
+	vector <vector <State>> stateTable;
+	const string &text;
+	State state;
+	string lexem;
+	int pos;
+};
