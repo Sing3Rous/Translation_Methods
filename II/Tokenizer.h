@@ -30,6 +30,7 @@ using namespace std;
 //--------------------------------------------------------------------------------------------------
 // /*..*  |  /*..  |  /*..   | /*.. | /*.. | /*.. | /*.. |  IGN | /*..* | /*.. | /*..  |   /*..    |
 //--------------------------------------------------------------------------------------------------
+
 struct Token {
 
 	string tableName;
@@ -74,7 +75,7 @@ enum State
 
 enum WhichTableToAdd
 {
-	KEYWORDS_OR_IDENTIFICATORS,
+	KEYWORDS_OR_IDENTIFIERS,
 	DELIMETERS,
 	OPERATIONS,
 	CONSTANTS,
@@ -95,7 +96,7 @@ public:
 	int getPos(void) const;
 	State nextState(Symbol symbol, State state);
 	vector <Token> parse(StaticTable &keyWords, StaticTable &delimiters,
-		StaticTable &operations, DynamicTable &constants, DynamicTable &identificators);
+		StaticTable &operations, DynamicTable &constants, DynamicTable &identifiers);
 
 private:
 	Symbol getSymbolType(char symbol);
