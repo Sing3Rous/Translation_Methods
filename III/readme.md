@@ -1,0 +1,1 @@
+![alt text](https://raw.githubusercontent.com/sing3rous/Translation_Methods/master/III/parse_scheme.png)
