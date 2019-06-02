@@ -1,0 +1,47 @@
+Operations:
+operation -> +
+operation -> -
+operation -> <=
+operation -> >=
+operation -> <
+operation -> >
+
+Assignment operations:
+assign_oper -> =
+assign_oper -> +=
+assign_oper -> -=
+assign_oper -> *=
+
+Start:
+s -> prog
+
+Program:
+prog -> int main () { body }
+prog -> eps
+
+Program body:
+body -> declar
+body -> assign
+body -> loop
+body -> eps
+
+Variables and constants:
+var_1 -> var
+var_1 -> const
+
+Assignment:
+assign -> var_1 assign_oper expr_1
+expr_1 -> var_1 expr_2
+expr_2 -> operation expr_1
+expr_2 -> eps
+
+Declaration:
+declar -> int declar_1
+declar_1 -> var_1 declar_2 declar_3
+declar_2 -> = expr_1
+declar_2 -> eps
+declar_3 -> , declar_1
+declar_3 -> eps
+
+Operators:
+loop -> while (expr_1) { body }
