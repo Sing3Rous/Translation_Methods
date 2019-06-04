@@ -37,6 +37,7 @@ public:
 	int getType(pair <int, int> token) const;
 	void setType(pair <int, int> token, int value);
 	void setInit(pair <int, int> token, bool init);
+	string getName(pair <int, int> token);
 
 //private:
 	vector <Attributes> data[NUM_OF_LETTERS_ENG * 2 + 3];

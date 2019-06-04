@@ -129,3 +129,8 @@ void DynamicTable::setInit(pair <int, int> token, bool init) {
 
 	data[token.first][token.second].isInitialized = init;
 }
+
+string DynamicTable::getName(pair<int, int> token)
+{
+	return data[token.first][token.second].name;
+}
