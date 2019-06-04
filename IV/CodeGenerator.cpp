@@ -1,14 +1,11 @@
-#include "CodeGenerator.h"
+﻿#include "CodeGenerator.h"
 
-void CodeGenerator::generate(ofstream &file, DynamicTable identifiers) {
+void CodeGenerator::generate(ofstream &file, DynamicTable identifiers, DynamicTable constants) {
 
-	file << ".386\n.MODEL FLAT, STDCALL\n\n";
-	file << "EXTRN\tExitProcess@4:NEAR\n";
-
-	string type;
-
-	file << "\n\n\n.data\n";
-	file << "\ttmp_var_eq\tdd\t?" << endl;
+	file << ".386" << endl <<
+		".MODEL FLAT, STDCALL" << endl <<
+		"EXTERN  ExitProcess@4: PROC\n" <<
+		".DATA" << endl;
 
 	for (auto arrays : identifiers.data) {
 
@@ -16,133 +13,136 @@ void CodeGenerator::generate(ofstream &file, DynamicTable identifiers) {
 
 			if (identifier.name != "") {
 
-				file << "\t" + identifier.name + "\t" + "dd" + " ?" << endl;
+				file << identifier.name + " " + "dd " + "?" << endl;
 			}
 		}
 	}
+	file << ".CODE" << endl << "MAIN PROC" << endl;
+	bool findResultToken = false;
+	Token resultToken;
+	int currentLabel = 0;
 
-	file << "\n\n.code\n";
-	file << "\tSTART:" << endl;
-	file << "\n\tfinit\n\n" << endl;
-
-	stack <string> asm_stack;
-	for (int i = 0; i < postfixEntry.size(); ++i) {
-
+	for (int i = 0; i < postfixEntry.size(); i++) {
 		auto token = postfixEntry[i];
-		
-		//assignment
-		if (token.lexem == "=") {
+		if (token.lexem == "\n") {
 
-			asm_stack.pop();
-			file << "\tfistp " + asm_stack.top() + "\n\n";
-			asm_stack.pop();
+			findResultToken = false;
+			continue;
 		}
-		if (token.lexem == "+=") {
+		if (token.tableName == "Operations") {
 
-			asm_stack.pop();
-			file << "\tfild " + asm_stack.top() + "\n";
-			file << "\tfadd\n";
-			file << "\tfistp " + asm_stack.top() + "\n\n";
-			asm_stack.pop();
+			auto operation = token.lexem;
+			if (operation == "=") {
+
+				int type;
+				string name;
+				if (resultToken.tableName != "label" && token.lexem != ":" && token.lexem != "?") {
+
+					type = identifiers.getType(make_pair(resultToken.firstPos, resultToken.secondPos));
+					name = identifiers.getName(make_pair(resultToken.firstPos, resultToken.secondPos));
+				} else {
+
+					type = -1;
+					name = resultToken.lexem;
+				}
+				file << "pop " + resultToken.lexem + "\n";
+				findResultToken = false;
+				file << "pop eax\n";
+			} else {
+
+				file << "pop eax\n";
+				file << "pop ebx\n";
+				if (operation == "+") {
+
+					file << "add ebx, eax\n";
+					file << "push ebx\n";
+				}
+				if (operation == "-") {
+
+					file << "sub ebx, eax\n";
+					file << "push ebx\n";
+				}
+				if (operation == ">" || operation == "<") {
+
+					string successLabel = "CMPSuccess" + to_string(currentLabel);
+					string resultLabel = "CMPResult" + to_string(currentLabel);
+					file << "cmp ebx, eax\n";
+					if (operation == ">") {
+
+						file << "jg " + successLabel + "\n";
+					} else {
+
+						file << "jl " + successLabel + "\n";
+					}
+					file << "push 0\n";
+					file << "mov ecx, 0\n";
+					file << "jmp " + resultLabel + "\n";
+					file << successLabel + ":\n";
+					file << "push 1\n";
+					file << "mov ecx, 1\n";
+					file << resultLabel + ":\n";
+					currentLabel++;
+				}
+				if (operation == ">=" || operation == "<=") {
+
+					string successLabel = string("CMPSuccess") + to_string(currentLabel);
+					string resultLabel = string("CMPResult") + to_string(currentLabel);
+					file << "cmp ebx, eax\n";
+					if (operation == ">=") {
+
+						file << "jge " + successLabel + "\n";
+					} else {
+
+						file << "jle " + successLabel + "\n";
+					}
+					file << "push 0\n";
+					file << "mov ecx, 0\n";
+					file << "jmp " + resultLabel + "\n";
+					file << successLabel + ":\n";
+					file << "push 1\n";
+					file << "mov ecx, 1\n";
+					file << resultLabel + ":\n";
+					currentLabel++;
+				}
+			}
+		} else {
+
+			if (token.tableName == "Identifiers") {
+
+				file << "push " + token.lexem + "\n";
+				if (findResultToken == false) {
+
+					resultToken = token;
+					findResultToken = true;
+				}
+			} else {
+
+				if (token.tableName != "label" && token.lexem != ":" && token.lexem != "?") {
+
+					file << "push " + constants.getName(make_pair(token.firstPos, token.secondPos)) + "\n";
+				}
+			}
 		}
-		if (token.lexem == "-=") {
-
-			asm_stack.pop();
-			file << "\tfild " + asm_stack.top() + "\n";
-			file << "\tfsubr\n";
-			file << "\tfistp " + asm_stack.top() + "\n\n";
-			asm_stack.pop();
-		}
-		if (token.lexem == "*=") {
-
-			asm_stack.pop();
-			file << "\tfild " + asm_stack.top() + "\n";
-			file << "\tfmul\n";
-			file << "\tfistp " + asm_stack.top() + "\n\n";
-			asm_stack.pop();
-		}
-
-		//arithmetic operations
-		if (token.lexem == "+") {
-
-			file << "\tfiadd\n\n";
-			asm_stack.pop();
-		}
-		if (token.lexem == "-") {
-
-			file << "\tfisubr\n\n";
-			asm_stack.pop();
-		}
-
-		//comparison operations
-		if (token.lexem == "<") {
-
-			file << "\tfstp edx\n";
-			file << "\tfstp ecx\n";
-			file << "\tlt edx ecx\n";
-			file << "\tfild edx\n\n";
-			asm_stack.pop();
-		}
-		if (token.lexem == ">") {
-
-			file << "\tfstp edx\n";
-			file << "\tfstp ecx\n";
-			file << "\tgt edx ecx\n";
-			file << "\tfild edx\n\n";
-			asm_stack.pop();
-		}
-		if (token.lexem == "<=") {
-
-			file << "\tfstp edx\n";
-			file << "\tfstp ecx\n";
-			file << "\tle edx ecx\n";
-			file << "\tfild edx\n\n";
-			asm_stack.pop();
-		}
-		if (token.lexem == ">=") {
-
-			file << "\tfstp edx\n";
-			file << "\tfstp ecx\n";
-			file << "\tge edx ecx\n";
-			file << "\tfild edx\n\n";
-			asm_stack.pop();
-		}
-
-		//labels
 		if (token.tableName == "label") {
 
 			if (i + 1 != postfixEntry.size() && (postfixEntry[i + 1].lexem == ":" || postfixEntry[i + 1].lexem == "?")) {
 
 				if (postfixEntry[i + 1].lexem == ":") {
 
-					file << "\tftst\n";
-					file << "\tfstp tmp_var_eq\n";
-					file << "\tfstsw ax\n\tsahf\n";
-					file << "\tje label" + to_string(postfixEntry[i + 1].firstPos) + "\n\n";
+					file << "cmp ecx, 0\n";
+					file << "je label" + token.lexem + "\n";
 				}
 				if (postfixEntry[i + 1].lexem == "?") {
 
-					file << "\tjmp label" + to_string(postfixEntry[i + 1].firstPos) + "\n\n";
+					file << "jmp label" + token.lexem + "\n";
 				}
 			} else {
 
-				file << "\tlabel" + token.lexem << ":\n\n";
+					file << "label" + token.lexem << ":\n";
 			}
 		}
-
-		//variables and constants
-		if (token.tableName == "Identifiers") {
-
-			file << "\tfild " + token.lexem + "\n";
-			asm_stack.push(token.lexem);
-		}
-		if (token.tableName == "Constants") {
-
-			file << "\tmov tmp_var, " + token.lexem + "\n";
-			file << "\tfild tmp_var\n";
-			asm_stack.push(token.lexem);
-		}
 	}
-	file << "\tCALL ExitProcess@4\n";
-	file << "END START\n";
+	file << "PUSH 0\n" <<
+		"CALL ExitProcess@4\n" <<
+		"MAIN ENDP\nEND MAIN\n";
 }
