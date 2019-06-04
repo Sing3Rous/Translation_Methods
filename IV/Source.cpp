@@ -20,14 +20,16 @@ int main() {
 
 	//const string text = "int main() {\nint a = 0;\nint b = -5;\nwhile (a < b) {\n/*\nbe\nli\nber\nda\n*\n*\n*\n*/\na = a + 1;\n}\n\nreturn 0;\n}";
 	//const string text = "int main() {\nint a = 0;\nint b = 5 + a;\n}";
-	//const string text = "int main() {\nint a = 0;\nint b = 5 + a;\n}";
+	//const string text = "int main() {\nint a = 3;\nint b = 5;\nint c = a + b;\n}";
 	//const string text = "int main (){\nint ba = 53453;\nint ab = ba + 3231;\nda = 23;\nda = ba + ab;}";
 	//const string text = "int main (){\nint ba = 53453;\nint ab = ba + 3231, da = 23;\nda = ba + ab;\nint i, j=2;\n}";
 	//const string text = "int main (){\nint ba = 53453;\nint ab = ba + 3231, da = 23;\nda = ba + ab;\nint i, j=2; while(i < 5) { j = j+2; };\n}";
-	//const string text = "int main(){\nint a = 1;\nwhile(a<5){a = a + 1;}}";
+	const string text = "int main(){\nint a = 1; int b = a;\nwhile(b<5){b = b + 1;}}";
 	//const string text = "int main(){\nint a = 1;\nwhile(a<5){while(a<6){a = a + 2; while (a > 8) {a = a + 1;} a = a + 3;}}}";
 	//const string text = "int main(){int ba = 53453;int ab = ba + 3231, da = 23; da = ba + ab; int i = 0; int j; while(i < 1){ba = ba + 1; i = i + 1;}}";
+	//const string text = "int main(){int a = 0, b = 1, k = 2; while (k < 4) {while (b < 5) {k = k + 10; a = a + 1; b = a;}}}";
 	//const string text = "int main(){\nint a, b = 0;}";
+	//const string text = "int main(){int a = 3; int b = a < 5; int k = a < 3;}";
 
 	//const string text = "int main() {}";
 	//const string text = "int main() {\nint a = 5;\nint b = a + 10, c = 8;\nc = a + b;\n}";
@@ -40,7 +42,7 @@ int main() {
 	// const string text = "int a a0;";
 	//const string text = "a - 3";
 	//const string text = "@@@@  шипучка   999abv   __4a";
-	const string text = "int main() {int a = 5 + 2;}";
+	//const string text = "int main() {int a = 5 + 2;}";
 
 	ofstream out2("testi.txt");
 	for (auto i : text) {
@@ -86,7 +88,7 @@ int main() {
 
 	ofstream generatedCode("generated_code.txt");
 	CodeGenerator codeGenerator(parser.postfixEntry);
-	codeGenerator.generate(generatedCode, identifiers);
+	codeGenerator.generate(generatedCode, identifiers, constants);
 
 	return 0;
 }
