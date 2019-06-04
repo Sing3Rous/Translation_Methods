@@ -5,7 +5,7 @@ class CodeGenerator
 {
 public:
 	CodeGenerator(vector <Token> _postfixEntry) { postfixEntry = _postfixEntry; };
-	void generate(ofstream &file, DynamicTable identifiers);
+	void generate(ofstream &file, DynamicTable identifiers, DynamicTable constants);
 
 private:
 	vector <Token> postfixEntry;
