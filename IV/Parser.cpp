@@ -125,12 +125,12 @@ void Parser::parse(StaticTable &keyWords, StaticTable &delimiters, StaticTable &
 
 					postfixEntry.push_back(makeLabel(labelNum));
 					labelNum++;
-					Token nextLine;
-					nextLine.firstPos = delimiters.find("\n");
-					nextLine.tableName = "Delimiters";
-					nextLine.lexem = "\n";
-					nextLine.secondPos = -1;
-					postfixEntry.push_back(nextLine);
+					//Token nextLine;
+					//nextLine.firstPos = delimiters.find("\n");
+					//nextLine.tableName = "Delimiters";
+					//nextLine.lexem = "\n";
+					//nextLine.secondPos = -1;
+					//postfixEntry.push_back(nextLine);
 				}
 				if (currentPos == 43) {
 
@@ -162,16 +162,17 @@ void Parser::parse(StaticTable &keyWords, StaticTable &delimiters, StaticTable &
 					reverse(begin(labelStack), end(labelStack));
 					questionMark.firstPos = labelStack[numOfWhiles].second;
 					postfixEntry.push_back(questionMark);
-					//very bad code end.
-					postfixEntry.push_back(makeLabel(labelStack[numOfWhiles].second));
-					numOfWhiles++;
-					//postfixEntry.push_back(makeLabel(labelNum - 1));
 					Token nextLine;
 					nextLine.firstPos = delimiters.find("\n");
 					nextLine.tableName = "Delimiters";
 					nextLine.lexem = "\n";
 					nextLine.secondPos = -1;
 					postfixEntry.push_back(nextLine);
+					//very bad code end.
+					postfixEntry.push_back(makeLabel(labelStack[numOfWhiles].second));
+					numOfWhiles++;
+					//postfixEntry.push_back(makeLabel(labelNum - 1));
+
 				}
 				if (name == "var") {
 				
